@@ -11,11 +11,8 @@
         body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; transition: 0.3s; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
         .screen { display: flex; flex-direction: column; align-items: center; padding: 30px; box-sizing: border-box; width: 100%; max-width: 480px; background: var(--card); border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         
-        /* UI Player */
         .disk { width: 180px; height: 180px; background: #333; border-radius: 50%; margin-bottom: 20px; border: 5px solid var(--text); }
         #title { font-size: 18px; margin-bottom: 20px; text-align: center; font-weight: 600; }
-        
-        /* Thanh tiến trình và Thời gian */
         .progress-container { width: 100%; max-width: 350px; height: 8px; background: #ddd; border-radius: 5px; cursor: pointer; margin-bottom: 5px; }
         #progress { height: 100%; width: 0%; background: var(--accent); border-radius: 5px; transition: width 0.1s linear; }
         .time-info { width: 100%; max-width: 350px; display: flex; justify-content: space-between; font-size: 12px; color: var(--sub-text); margin-bottom: 20px; }
@@ -26,7 +23,6 @@
         #playBtn { font-size: 40px; }
         .active { color: var(--accent); text-shadow: 0 0 10px var(--accent); }
 
-        /* UI List */
         #list-screen { display: none; }
         .list-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px; flex-wrap: wrap; }
         ul { width: 100%; list-style: none; padding: 0; max-height: 40vh; overflow-y: auto; }
@@ -40,7 +36,6 @@
         select { padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); }
         .theme-btn { position: absolute; top: 20px; right: 20px; cursor: pointer; padding: 8px 15px; border-radius: 20px; background: var(--card); color: var(--text); border: 1px solid var(--border); }
 
-        /* Modal & Toast */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
         .modal-box { background: var(--card); padding: 25px; border-radius: 20px; width: 320px; text-align: center; }
         .modal-box input { width: 90%; padding: 10px; margin: 15px 0; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
@@ -55,13 +50,8 @@
 <div id="player-screen" class="screen">
     <div class="disk"></div>
     <h2 id="title">Chưa chọn bài</h2>
-    
     <div class="progress-container" onclick="seek(event)"><div id="progress"></div></div>
-    <div class="time-info">
-        <span id="current">0:00</span>
-        <span id="duration">0:00</span>
-    </div>
-
+    <div class="time-info"><span id="current">0:00</span><span id="duration">0:00</span></div>
     <div class="controls">
         <button class="btn" id="shuffle-btn" onclick="isShuffle=!isShuffle; this.classList.toggle('active')">🔀</button>
         <button class="btn" onclick="prevSong()">⏮️</button>
@@ -101,10 +91,11 @@
 
 <div id="select-modal" class="modal-overlay">
     <div class="modal-box">
-        <h3>Thêm vào Playlist</h3>
-        <select id="target-playlist-select" style="width:100%; margin: 15px 0;"></select>
-        <button class="btn-action" onclick="confirmAddToPlaylist()">Thêm</button>
-        <button class="btn-action" style="background:#888" onclick="closeSelectModal()">Hủy</button>
+        <h3>Tùy chọn bài hát</h3>
+        <button class="btn-action" style="width:100%; margin: 5px 0; background: #e74c3c;" onclick="deleteSong()">Xóa bài hát</button>
+        <select id="target-playlist-select" style="width:100%; margin: 10px 0;"></select>
+        <button class="btn-action" style="width:100%;" onclick="confirmAddToPlaylist()">Thêm vào Playlist</button>
+        <button class="btn-action" style="background:#888; width:100%; margin-top:10px;" onclick="closeSelectModal()">Hủy</button>
     </div>
 </div>
 
@@ -114,27 +105,24 @@
 <script>
     let library = [{ name: "Tất cả bài hát", items: [] }]; 
     let playlistIndex = 0, index = 0, isLoop = false, isShuffle = false;
-    let songToAdd = null, currentCallback = null;
+    let songToAdd = null, currentPIdx = 0, currentSIdx = 0, currentCallback = null;
 
     const audio = document.getElementById('audio'), playBtn = document.getElementById('playBtn'), 
           progress = document.getElementById('progress'), title = document.getElementById('title'),
           currTimeEl = document.getElementById('current'), durTimeEl = document.getElementById('duration');
 
-    // Hàm gọi thông báo
     function showToast(msg) { const t = document.getElementById("toast"); t.innerText = msg; t.className = "show"; setTimeout(() => t.className = "", 3000); }
-    
-    // Modal
     function openInputModal(title, callback) { document.getElementById('input-modal-title').innerText = title; currentCallback = callback; document.getElementById('input-modal').style.display = 'flex'; }
     function closeInputModal() { document.getElementById('input-modal').style.display = 'none'; }
     function processModal() { currentCallback(document.getElementById('modal-input').value); document.getElementById('modal-input').value = ""; closeInputModal(); }
 
     function addSongs(e) {
         for (let file of e.target.files) library[0].items.push({ name: file.name, src: URL.createObjectURL(file), addedDate: new Date() });
-        renderPlaylist(); showToast("Đã thêm bài hát");
+        renderPlaylist(); showToast("Đã thêm " + e.target.files.length + " bài");
     }
 
     function createPlaylist(name) {
-        if(name) { library.push({ name, items: [] }); updateSelect(); showToast("Playlist: " + name); }
+        if(name) { library.push({ name, items: [] }); updateSelect(); showToast("Đã tạo: " + name); }
     }
 
     function updateSelect() {
@@ -154,12 +142,18 @@
     }
 
     function openSelectModal(pIdx, sIdx) {
-        songToAdd = library[pIdx].items[sIdx];
+        currentPIdx = pIdx; currentSIdx = sIdx; songToAdd = library[pIdx].items[sIdx];
         const sel = document.getElementById('target-playlist-select');
         sel.innerHTML = library.map((p, idx) => `<option value="${idx}">${p.name}</option>`).join("");
         document.getElementById('select-modal').style.display = 'flex';
     }
     function closeSelectModal() { document.getElementById('select-modal').style.display = 'none'; }
+    
+    function deleteSong() {
+        library[currentPIdx].items.splice(currentSIdx, 1);
+        renderPlaylist(); showToast("Đã xóa bài hát"); closeSelectModal();
+    }
+
     function confirmAddToPlaylist() {
         let idx = document.getElementById('target-playlist-select').value;
         library[idx].items.push(songToAdd);
@@ -180,28 +174,16 @@
         audio.play(); title.innerText = library[pIdx].items[i].name; playBtn.innerText = "⏸️"; showPlayer();
     }
 
-    function togglePlay() { 
-        if (audio.paused) { audio.play(); playBtn.innerText = "⏸️"; }
-        else { audio.pause(); playBtn.innerText = "▶️"; }
-    }
-
+    function togglePlay() { if (audio.paused) { audio.play(); playBtn.innerText = "⏸️"; } else { audio.pause(); playBtn.innerText = "▶️"; } }
     function nextSong() {
         const items = library[playlistIndex].items;
-        if(items.length > 0) {
-            index = isShuffle ? Math.floor(Math.random() * items.length) : (index + 1) % items.length;
-            playSong(playlistIndex, index);
-        }
+        if(items.length > 0) { index = isShuffle ? Math.floor(Math.random() * items.length) : (index + 1) % items.length; playSong(playlistIndex, index); }
     }
-    
     function prevSong() {
         const items = library[playlistIndex].items;
-        if(items.length > 0) {
-            index = (index - 1 + items.length) % items.length;
-            playSong(playlistIndex, index);
-        }
+        if(items.length > 0) { index = (index - 1 + items.length) % items.length; playSong(playlistIndex, index); }
     }
 
-    // Xử lý thời gian
     audio.ontimeupdate = () => {
         if(audio.duration) {
             progress.style.width = (audio.currentTime / audio.duration) * 100 + "%";
@@ -210,15 +192,12 @@
         }
     };
     function formatTime(time) {
-        let m = Math.floor(time / 60);
-        let s = Math.floor(time % 60);
+        let m = Math.floor(time / 60), s = Math.floor(time % 60);
         return m + ":" + (s < 10 ? "0" : "") + s;
     }
-
     function seek(e) { if(audio.duration) audio.currentTime = (e.offsetX / e.target.clientWidth) * audio.duration; }
     function showList() { document.getElementById('player-screen').style.display = 'none'; document.getElementById('list-screen').style.display = 'flex'; updateSelect(); renderPlaylist(); }
     function showPlayer() { document.getElementById('player-screen').style.display = 'flex'; document.getElementById('list-screen').style.display = 'none'; }
-    
     audio.onended = () => { if (!isLoop) nextSong(); };
     updateSelect();
 </script>
