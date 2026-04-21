@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "577171215614",
+    "project_id": "nhacvinh-1ec80",
+    "storage_bucket": "nhacvinh-1ec80.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:577171215614:android:d5d134b28dced0252a81af",
+        "android_client_info": {
+          "package_name": "com.company.nhacMP3"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCp4q_g9OAC3jCYRNv2p9NHZHVRIl7e5Mk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
